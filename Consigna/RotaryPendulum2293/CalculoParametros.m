@@ -22,3 +22,10 @@ l2 = tau_2/(g*m2*sin(t_2));
 % Se usa el expermiento D sin dumping y sin gravedad
 tdd_2 = 46.6;
 J2 = tau_2/tdd_2;
+
+%% Linealizacion de ecuaciones de estado
+%b1 y b2:damping coefficient 
+b1 = 0;     %cambiar
+b2 = 0;     %cambiar
+L1 = 2*l1;  %cambiar
+theta = linealizacion(m1,m2,l1,l2,L1,J1,J2,tau_1,b1,b2,g);
