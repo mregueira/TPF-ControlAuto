@@ -30,7 +30,7 @@ b1 = 1e-6; %cambiar
 b2 = 0.001e-3; %cambiar
 L1 = 103.5e-3;  % Abrimos las dos piezas con un visualizador
 [theta,A,B] = linealizacion(m1,m2,l1,l2,L1,J1,J2,tau_1,b1,b2,g);
-C = [0 1 0 0];
+C = [1 1 0 0];
 %% Realimentacion de estados (No estaria andando, se queda oscilando)
 % Pruebo sin accion integral
 % pole = -10;
@@ -41,18 +41,11 @@ C = [0 1 0 0];
 % Kt = acker(Aa,Ba,[-10;-10;-10;-10;-10]);
 % K = Kt(1:end-1)
 % Ki = -Kt(end)
-% Prueba con LQR (Ahora anda)
+% Prueba con LQR (Ahora anda)!!!
 Q = diag([10 10 10 10]);
 R = 5;
 [K,S,e] = lqr(A,B,Q,R);
-% Prueba con LQI
-% Aa = [A zeros(4,1);-C 0];
-% Ba = [B;0];
-Qi = diag([2 2 10 10 10]);
-R = 7;
-sys = ss(A,B,C,0);
-[Kt,St,et] = lqi(sys,Qi,R);
-Kt
+K 
 %% LoopShaping
 % Primero sacamos la transferencia SIMO
 % C = [1 0 0 0];
