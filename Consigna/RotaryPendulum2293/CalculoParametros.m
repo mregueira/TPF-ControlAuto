@@ -28,54 +28,102 @@ J2 = l2*m2*g*((p/(2*pi))^2);
 %% Linealizacion de ecuaciones de estado
 %b1 y b2: damping coefficient
 b1 = 1e-6; %cambiar
-b2 = 0.001e-3; %cambiar
+b2 = 0*0.001e-3; %cambiar
 L1 = 103.5e-3;  % Abrimos las dos piezas con un visualizador
 [theta,A,B] = linealizacion(m1,m2,l1,l2,L1,J1,J2,tau_1,b1,b2,g);
-%% Realimentacion de estados
 C = [1 0 0 0];
-% Pruebo sin accion integral (Funciona OK, todo +)
-pole1 = -2.8+3i;
-pole2 = -2.8-3i;
+
+%% Realimentacion de estados
+% 1) Por LQR sin accion integral
 Kn = acker(A,B,130*[pole1;pole2;-0.03;-0.02]);
 % Con accion integral (Funciona OK, todo +)
 Ba = [B;0];
 Aa = [A zeros(4,1);-C 0];
-Kt = acker(Aa,Ba,5*[pole1;pole2;-0.03;-0.02;-3000]);
-K = Kt(1:end-1)
-Ki = -Kt(end)
-% Prueba con LQR (funciona OK)
-% Q = diag([10 10 10 10]);
-% R = 5;
-% [K,S,e] = lqr(A,B,Q,R);
-% Prueba con LQI (funciona OK)
-% Qi = diag([2 2 10 10 10]);
-% R = 7;
-% sys = ss(A,B,C,0);
-% [Kt,St,et] = lqi(sys,Qi,R);
-% Kt;
+% Kt = acker(Aa,Ba,5*[pole1;pole2;-0.03;-0.02;-5000]);
+% K = Kt(1:end-1)
+% Ki = -Kt(end)
 
-% En discreto (Funciona OK, todo +, 1ms)
+% Prueba con LQR (funciona OK, todo +)
+Q = diag([0.3 0.3 3 3 0.00005]);
+R = 1;
+[Kt,S,e] = lqr(Aa,Ba,Q,R);
+% K = Kt(1:end-1)
+% Ki = -Kt(end)
+
+sys = ss(A,B,C,0);
+sysD = c2d(sys,1e-3,'zoh');
+% Prueba con LQI (funciona OK)
+Qi = diag([1 10 1 10 1]);
+R = 1;
+[Kti,St,et] = lqi(sys,Qi,R);
+K = Kti(1:end-1)
+Ki = -Kti(end)
+eig(A-B*K)
+
+% En discreto sin observador (Funciona OK, todo +, 1ms)
 % - Uso las ganancias continuas
 % - Introducir ZOH
 % - Cambiar integrador por Forward
 Ts = 1e-3;
-% sysD = c2d(sys,Ts,'zoh');
-% Aa = [sysD.a zeros(4,1);-Ts*C 1];
-% Ba = [sysD.b;0];
-% mul = 8;
+C2 = [1 0 0 0;0 1 0 0];
+% A(3,4) = -A(3,4);
+% A(4,2) = -A(4,2);
+% A(4,3) = -A(4,3);
+% B(4,1) = -B(4,1);
+sys = ss(A,B,C2,0);
+sysD = c2d(sys,Ts,'zoh');
+
+% Esto es lo que anda menos peor
+% x = 1;
+% Qobs = diag(x*[30 30 0.1 0.1]);
+% Robs = x*10;
+% [Lobs,Sobs,eobs] = lqr(sysD.a',sysD.c',Qobs,Robs);
+% Lobs = Lobs'
+
+% mul = 300;
 % p1 = exp(pole1*Ts*mul);
 % p2 = exp(pole2*Ts*mul);
-% p3 = exp(-0.08*Ts*mul);
-% p4 = exp(-0.07*Ts*mul);
+% p3 = exp(-0.03*Ts*mul);
+% p4 = exp(-0.02*Ts*mul);
+% p5 = exp(-0.04*Ts*mul);
 % p5 = exp(-5000*Ts*mul);
 % Kd = acker(Aa,Ba,[p1 p2 p3 p4 p5]);
 % Kd_f = Kd(1:end-1)
 % Kd_i = -Kd(end)
-Lobs = acker(A',C',130*[pole1;pole2;-0.03;-0.02])
+
+% Lobs = place(sysD.a',sysD.c',[p1;p2;p3;p4]);
+% Lobs = Lobs'
+% Lobs = place(A',C2',3*[pole1;pole2;-0.03;-0.02])
+% Esto anda mucho mejor pero no estabiliza aun
+Aw = sysD.a;
+Bw = sysD.b;
+Aaa = Aw(1:2,1:2);
+Aab = Aw(1:2,3:4);
+Aba = Aw(3:4,1:2);
+Abb = Aw(3:4,3:4);
+Ba = Bw(1:2);
+Bb = Bw(3:4);
+% Para el calculo de L
+Ao = Abb;
+Co = Aab;
+Qw = diag(1*[1 1]);
+Rw = 1;
+[Lobs,Sobs,eobs] = lqr(Ao',Co',Qw,Rw);
+Ke = Lobs';
+% Matrices equivalentes
+A_h = Abb - Ke*Aab;
+B_h = A_h*Ke + Aba - Ke*Aaa;
+F_h = Bb - Ke*Ba;
+C_h = [0 0;0 0;1 0;0 1];
+D_h = [1 0;0 1;Ke];
+
+
 % Qi = diag([1 1 20 10 7]);
 % R = 0.7;
 % [Kd,Sd,ed] = dlqr(AaD,BaD,Qi,R);
 % Kd
+
+
 %% LoopShaping
 % % Primero sacamos la transferencia
 % C = [1 0 0 0];
