@@ -120,32 +120,33 @@ Dd_h = [1 0;0 1;Ked];
 %% Loop Shaping
 s = tf('s');
 [n,d] = ss2tf(A,B,[1 0 0 0],0);
-P1 = zpk(tf(n,d));
+P1 = minreal(zpk(tf(n,d)),0.001);
 [n,d] = ss2tf(A,B,[0 1 0 0],0);
-G1 = zpk(tf(n,d)); % Sale con beta
-G2 = zpk(24.248*(s+8.719)*(s-8.696)/(19.396*(s-8.161e-08)*(s+8.161e-08)));
-% Tal que G1*G2 = P1 (si no fuera por el error numerico)
+Ga = minreal(zpk(tf(n,d)),0.001); % Sale con beta
+pade = (1-(s*Ts/4))/(1+(s*Ts/4));
+Gb = minreal(P1/Ga,0.001);
+% Tal que Ga*Gb = P1
 % Para beta armamos un PI
-G1_mp = G1*(s-10.77)*(s+8.161e-08)/((s+10.77)*(s-8.161e-08));
-G1_ap = (s-8.161e-08)*(s+10.77)/((s-10.77)*(s+8.161e-08));
-C2 = (1/s)*(1/G1_mp);
-Lazo2 = C2*G1;
-% Lazo2 = 0.31623*(s+10.77)*(s-8.161e-8)/(s*(s+8.161e-8)*(s-10.77));
-% figure();
-% bode(Lazo2);
-Kl2 = 1/db2mag(-40);
+Ga_mp = minreal(Ga*(s-10.77)/(s+10.77),0.001);
+C2 = minreal((1/s)*(1/Ga_mp)/(1+(s/50)),0.001);
+Lazo2 = minreal(C2*Ga,0.001);
+figure();
+bode(Lazo2);
+Kl2 = 1/db2mag(-35);
 Lazo2 = Lazo2*Kl2;
-% figure();
-% nyqlog(Lazo2);
+figure();
+nyqlog(Lazo2);
 % Para alfa armamos un PID
-T2 = 1-(1/(1+Lazo2));
-G2eq = G2*T2;
-% 125.02*(s+8.719)*(s+10.77)*(s-8.696)/((s-8.16e-8)*(s+8.16e-8)*(s+14.39)*(s+74.84))
-G2eq_mp = G2eq*(s+8.696)*(s-8.16e-8)/((s-8.696)*(s+8.16e-8));
-C1 = (1/s)*(1/G2eq_mp);
-
-
-
-
-
-
+close all;
+T2 = minreal(1-(1/(1+Lazo2)),0.001);
+Gbeq = minreal(Gb*T2,0.001);
+Gbeq_mp = minreal(Gbeq*(s+8.696)/((s-8.696)),0.001);
+C1 = minreal((1/s)*(1/Gbeq)/(1+(s/50)),0.001);
+Lazo1 = minreal(C1*Gbeq,0.001);
+figure();
+bode(Lazo1);
+Kl1 = 1/db2mag(-36);
+Lazo1 = Lazo1*Kl1;
+figure();
+nyqlog(Lazo1);
+close all;
