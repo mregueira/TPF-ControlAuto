@@ -128,7 +128,7 @@ Gb = minreal(P1/Ga,0.001);
 % Tal que Ga*Gb = P1
 % Para beta armamos un PI
 Ga_mp = minreal(Ga*(s-10.77)/(s+10.77),0.001);
-C2 = minreal((1/s)*(1/Ga_mp)/(1+(s/50)),0.001);
+C2 = minreal((1/Ga_mp)/((1+(s/50))^2),0.001);
 Lazo2 = minreal(C2*Ga,0.001);
 figure();
 bode(Lazo2);
@@ -141,12 +141,14 @@ close all;
 T2 = minreal(1-(1/(1+Lazo2)),0.001);
 Gbeq = minreal(Gb*T2,0.001);
 Gbeq_mp = minreal(Gbeq*(s+8.696)/((s-8.696)),0.001);
-C1 = minreal((1/s)*(1/Gbeq)/(1+(s/50)),0.001);
+C1 = minreal((-1)*(1/Gbeq_mp)/((1+(s/0.5))^2*(1+(s/1))*(1+(s/50))),0.001);
 Lazo1 = minreal(C1*Gbeq,0.001);
 figure();
 bode(Lazo1);
-Kl1 = 1/db2mag(-36);
+Kl1 = 1/db2mag(-10);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
 close all;
+T1 = minreal(1-(1/(1+Lazo1)),0.001);
+eig(T1)
