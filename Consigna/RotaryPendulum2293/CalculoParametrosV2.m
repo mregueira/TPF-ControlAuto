@@ -11,7 +11,7 @@ tau_1 = 1;
 % Del grafico sale la aceleracion
 tdd_1 = 5.71e4;
 % Calculo del J1
-J1 = tau_1/(tdd_1);
+J1 = 2*pi*tau_1/(tdd_1);
 %% D) l2 - Distancia centro de masa 2
 % Haciendo tau_1 = 0
 tau_2 = 2e-3; % Nm
@@ -31,7 +31,7 @@ L1 = 103.5e-3;  % Abrimos las dos piezas con un visualizador
                 % UltimakerCura
 [theta,A,B] = linealizacion(m1,m2,0,l2,L1,J1,J2,tau_1,b1,b2,g);
 C = [1 0 0 0];
-B = B/800;
+B = B/300;
 
 %% Realimentacion de estados
 % Tiempo Continuo
@@ -120,32 +120,33 @@ Dd_h = [1 0;0 1;Ked];
 %% Loop Shaping
 s = tf('s');
 [n,d] = ss2tf(A,B,[1 0 0 0],0);
-P1 = minreal(zpk(tf(n,d)),0.001);
+P1 = minreal(zpk(tf(n,d)),0.001); % Sale con alfa
 [n,d] = ss2tf(A,B,[0 1 0 0],0);
 Ga = minreal(zpk(tf(n,d)),0.001); % Sale con beta
 pade = (1-(s*Ts/4))/(1+(s*Ts/4));
 Gb = minreal(P1/Ga,0.001);
 % Tal que Ga*Gb = P1
 % Para beta armamos un PI
-Ga_mp = minreal(Ga*(s-10.77)/(s+10.77),0.001);
-C2 = minreal((1/Ga_mp)/((1+(s/50))^2),0.001);
+Ga_mp = minreal(Ga*(s-9.489)/(s+9.489),0.001);
+C2 = minreal((1/Ga_mp)/(1+(s/50))^2,0.001);
 Lazo2 = minreal(C2*Ga,0.001);
 figure();
 bode(Lazo2);
-Kl2 = 1/db2mag(-35);
+Kl2 = 1/db2mag(-2);
 Lazo2 = Lazo2*Kl2;
 figure();
 nyqlog(Lazo2);
+T2 = minreal(1-(1/(1+Lazo2)),0.001);
+eig(T2)
 % Para alfa armamos un PID
 close all;
-T2 = minreal(1-(1/(1+Lazo2)),0.001);
 Gbeq = minreal(Gb*T2,0.001);
 Gbeq_mp = minreal(Gbeq*(s+8.696)/((s-8.696)),0.001);
-C1 = minreal((-1)*(1/Gbeq_mp)/((1+(s/0.5))^2*(1+(s/1))*(1+(s/50))),0.001);
+C1 = minreal((1/Gbeq_mp)/(1+(s/50))^2,0.001);
 Lazo1 = minreal(C1*Gbeq,0.001);
 figure();
 bode(Lazo1);
-Kl1 = 1/db2mag(-10);
+Kl1 = 1/db2mag(2);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
