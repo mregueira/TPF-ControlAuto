@@ -119,14 +119,10 @@ Dd_h = [1 0;0 1;Ked];
 
 %% Loop Shaping
 s = tf('s');
-[n,d] = ss2tf(A,B,[1 0 0 0],0);
-P1 = minreal(zpk(tf(n,d)),0.01); % Sale con alfa
 [n,d] = ss2tf(A,B,[0 1 0 0],0);
 Ga = minreal(zpk(tf(n,d)),0.01); % Sale con beta
-Gb = minreal(P1/Ga,0.01);
-% Tal que Ga*Gb = P1
+
 % Para beta armamos un PI
-% Ga_mp = minreal(Ga*(s-9.489)/(s+9.489),0.001);
 C2 = minreal((s+9.518)/(1+(s/50)),0.01);
 Lazo2 = minreal(C2*Ga,0.01);
 figure();
@@ -135,18 +131,43 @@ Kl2 = 1/db2mag(-3);
 Lazo2 = Lazo2*Kl2;
 figure();
 nyqlog(Lazo2);
-T2 = minreal(1-(1/(1+Lazo2)),0.01);
+
+C2_aux = C2;
+C2 = -C2*Kl2;
+C2 = ss(C2);
+
+C2.u='beta';
+C2.y='ut';
+
+%% Interconectamos C2 con el Sistema Completo:
+% Nos queda el sistema con C2 enganchado que realimenta el angulo "beta"
+
+Gss=ss(A,B,[1 0 0 0;0 1 0 0],[0;0]);
+Gss.u='u';
+Gss.y='y';
+Sum = sumblk('u = ut + up');
+Sys=ss([],[],[],[1 0]);
+Sys.u='y';
+Sys.y='alfa';
+Sys2=ss([],[],[],[0 1]);
+Sys2.u='y';
+Sys2.y='beta';
+
+Gb=connect(Gss,C2,Sum,Sys,Sys2,'up','alfa');
+Gb = zpk(Gb);
+Gb = minreal(Gb,0.01);
+
 % Para alfa armamos un PID
 close all;
-Gbeq = minreal(Gb*T2,0.01);
-Gbeq_mp = minreal(Gbeq*(s+8.696)/((s-8.696)),0.01);
-C1 = minreal(-(1/s)*(1/Gbeq_mp)/(1+(s/50)),0.01);
-Lazo1 = minreal(C1*Gbeq,0.01);
+C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 833)*(s+8.696)/(23.136*(s+50)*(s+8.719)),0.01);
+zpk(minreal(C1p*zpk(Gb),0.01))
+C1pp = -((s+0.5)^2/(1+(s/50))^3);
+C1 = minreal(C1p*C1pp);
+Lazo1 = minreal(C1*Gb);
 figure();
 bode(Lazo1);
-Kl1 = 1/db2mag(0);
+Kl1 = 1/db2mag(34.35);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
 close all;
-T1 = minreal(1-(1/(1+Lazo1)),0.001);
