@@ -31,7 +31,7 @@ L1 = 103.5e-3;  % Abrimos las dos piezas con un visualizador
                 % UltimakerCura
 [theta,A,B] = linealizacion(m1,m2,0,l2,L1,J1,J2,tau_1,b1,b2,g);
 C = [1 0 0 0];
-B = B/300;
+B = B/1000; % Compensar el N*mm
 
 %% Realimentacion de estados
 % Tiempo Continuo
@@ -107,7 +107,7 @@ Bb = Bw(3:4);
 % Para el calculo de L
 Aod = Abb;
 Cod = Aab;
-Lobs = place(Aod',Cod',[poles2d(1) poles2d(1)].^10);
+Lobs = place(Aod',Cod',[poles2d(1) poles2d(1)].^20);
 Ked = Lobs';
 poles3d_obs = eig(Aod-Ked*Cod);
 % Matrices equivalentes para simulink
@@ -127,7 +127,7 @@ C2 = minreal((s+9.518)/(1+(s/50)),0.01);
 Lazo2 = minreal(C2*Ga,0.01);
 figure();
 bode(Lazo2);
-Kl2 = 1/db2mag(-3);
+Kl2 = 1/db2mag(-12);
 Lazo2 = Lazo2*Kl2;
 figure();
 nyqlog(Lazo2);
@@ -159,15 +159,15 @@ Gb = minreal(Gb,0.01);
 
 % Para alfa armamos un PID
 close all;
-C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 833)*(s+8.696)/(23.136*(s+50)*(s+8.719)),0.01);
+C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 631)*(s+8.696)/(6.94*(s+50)*(s+8.719)),0.01);
 zpk(minreal(C1p*zpk(Gb),0.01))
-C1pp = -((s+0.5)^2/(1+(s/50))^3);
+C1pp = -((s+0.4)^2/(1+(s/40))^3);
 C1 = minreal(C1p*C1pp);
 Lazo1 = minreal(C1*Gb);
 figure();
 bode(Lazo1);
-Kl1 = 1/db2mag(34.35);
+Kl1 = 1/db2mag(40);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
-close all;
+% close all;
