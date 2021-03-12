@@ -139,7 +139,7 @@ C2 = ss(C2);
 C2.u='beta';
 C2.y='ut';
 
-%% Interconectamos C2 con el Sistema Completo:
+% Interconectamos C2 con el Sistema Completo:
 % Nos queda el sistema con C2 enganchado que realimenta el angulo "beta"
 
 Gss=ss(A,B,[1 0 0 0;0 1 0 0],[0;0]);
@@ -160,8 +160,8 @@ Gb = minreal(Gb,0.01);
 % Para alfa armamos un PID
 close all;
 C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 631)*(s+8.696)/(6.94*(s+50)*(s+8.719)),0.01);
-zpk(minreal(C1p*zpk(Gb),0.01))
-C1pp = -((s+0.4)^2/(1+(s/40))^3);
+zpk(minreal(C1p*zpk(Gb),0.01));
+C1pp = -((s+0.15)^2/(1+(s/40))^3);
 C1 = minreal(C1p*C1pp);
 Lazo1 = minreal(C1*Gb);
 figure();
@@ -170,4 +170,11 @@ Kl1 = 1/db2mag(40);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
-% close all;
+close all;
+
+% Tiempo Discreto
+% Polo mas lejos: -50 => 8Hz
+% Para cumplir Nyquist al menos muestrear a 16Hz => 6.25ms
+Ts2 = 1e-3; % Funciona bien, no oscila
+C2d = c2d(C2_aux,Ts2,'zoh');
+C1d = c2d(C1,Ts2,'zoh');
