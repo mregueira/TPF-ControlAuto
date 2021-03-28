@@ -3,6 +3,7 @@ clear all;
 close all;
 clc;
 run("RotaryPendulum_PARAM.m");
+controller_on_off=1;
 g = 9.81;
 m1 = 0.01835; % Suma de las masas
 m2 = 0.00575; % Suma de las masas
@@ -159,14 +160,16 @@ Gb = minreal(Gb,0.01);
 
 % Para alfa armamos un PID
 close all;
-C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 631)*(s+8.696)/(6.94*(s+50)*(s+8.719)),0.01);
+% C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 631)*(s+8.696)/(6.94*(s+50)*(s+8.719)),0.01);
+C1p = minreal((1/s)*(s+9.518)*(s^2 + 40.52*s + 631)/(6.94*(s+8.696)*(s+50)*(s+8.719)),0.01);
 zpk(minreal(C1p*zpk(Gb),0.01));
-C1pp = -((s+0.15)^2/(1+(s/40))^3);
+% C1pp = -((s+0.15)^2/(1+(s/40))^3);
+C1pp = -((s+0.15)^2/(1+(s/50)));
 C1 = minreal(C1p*C1pp);
-Lazo1 = minreal(C1*Gb);
+Lazo1 = minreal(C1*Gb,0.01);
 figure();
 bode(Lazo1);
-Kl1 = 1/db2mag(40);
+Kl1 = 1/db2mag(0);
 Lazo1 = Lazo1*Kl1;
 figure();
 nyqlog(Lazo1);
@@ -178,3 +181,22 @@ close all;
 Ts2 = 1e-3; % Funciona bien, no oscila
 C2d = c2d(C2_aux,Ts2,'zoh');
 C1d = c2d(C1,Ts2,'zoh');
+
+% Loop Shaping uC
+C1 = tf(C1);
+[Ac1, Bc1, Cc1, Dc1] = tf2ss(cell2mat(C1.Numerator),cell2mat(C1.Denominator));
+aux1 = ss(Ac1,Bc1,Cc1,Dc1);
+aux1d = c2d(aux1,Ts2,'zoh');
+uC1a = aux1d.a;
+uC1b = aux1d.b;
+uC1c = aux1d.c;
+uC1d = aux1d.d;
+
+C2_aux = tf(C2_aux);
+[Ac2, Bc2, Cc2, Dc2] = tf2ss(cell2mat(C2_aux.Numerator),cell2mat(C2_aux.Denominator));
+aux2 = ss(Ac2,Bc2,Cc2,Dc2);
+aux2d = c2d(aux2,Ts2,'zoh');
+uC2a = aux2d.a;
+uC2b = aux2d.b;
+uC2c = aux2d.c;
+uC2d = aux2d.d;
