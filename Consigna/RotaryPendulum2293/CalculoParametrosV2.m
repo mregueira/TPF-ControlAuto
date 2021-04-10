@@ -182,6 +182,7 @@ Ts2 = 1e-3; % Funciona bien, no oscila
 C2d = c2d(C2_aux,Ts2,'zoh');
 C1d = c2d(C1,Ts2,'zoh');
 
+%% Implementacion en uC
 % Loop Shaping uC
 C1 = tf(C1);
 [Ac1, Bc1, Cc1, Dc1] = tf2ss(cell2mat(C1.Numerator),cell2mat(C1.Denominator));
@@ -200,3 +201,24 @@ uC2a = aux2d.a;
 uC2b = aux2d.b;
 uC2c = aux2d.c;
 uC2d = aux2d.d;
+
+% Realimentación de estados uC
+ka = K2(1:2);
+kb = K2(3:4);
+A_mn = A_h - F_h*kb;
+B_mn = B_h - F_h*(ka+kb*Ke);
+C_mn = -kb;
+D_mn = -(ka+kb*Ke);
+Obs_TF = -(C_mn*((s*eye(2)-A_mn)^-1)*B_mn + D_mn);
+Obs_TF = minreal(Obs_TF,0.01);
+aOBS = cell2mat(Obs_TF.Numerator);
+aOBS = [aOBS(1:2); aOBS(3:4)];
+bOBS = cell2mat(Obs_TF.Denominator);
+bOBS = bOBS(1:2);
+[Aobs2, Bobs2, Cobs2, Dobs2] = tf2ss(aOBS,bOBS);
+aux_obs = ss(Aobs2, Bobs2, Cobs2, Dobs2);
+aux_obsD = c2d(aux_obs,Ts2,'zoh');
+obs_uCa = aux_obsD.a;
+obs_uCb = aux_obsD.b;
+obs_uCc = aux_obsD.c;
+obs_uCd = aux_obsD.d;
