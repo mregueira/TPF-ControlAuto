@@ -139,10 +139,9 @@ C2 = ss(C2);
 
 C2.u='beta';
 C2.y='ut';
-
 % Interconectamos C2 con el Sistema Completo:
-% Nos queda el sistema con C2 enganchado que realimenta el angulo "beta"
-
+% Nos queda el sistema con C2 enganchado 
+% que realimenta el angulo "beta"
 Gss=ss(A,B,[1 0 0 0;0 1 0 0],[0;0]);
 Gss.u='u';
 Gss.y='y';
@@ -186,6 +185,7 @@ C1d = c2d(C1,Ts2,'zoh');
 % Loop Shaping uC
 C1 = tf(C1);
 [Ac1, Bc1, Cc1, Dc1] = tf2ss(cell2mat(C1.Numerator),cell2mat(C1.Denominator));
+% Queda de dimension  pq son 5 polos
 aux1 = ss(Ac1,Bc1,Cc1,Dc1);
 aux1d = c2d(aux1,Ts2,'zoh');
 uC1a = aux1d.a;
@@ -195,6 +195,7 @@ uC1d = aux1d.d;
 
 C2_aux = tf(C2_aux);
 [Ac2, Bc2, Cc2, Dc2] = tf2ss(cell2mat(C2_aux.Numerator),cell2mat(C2_aux.Denominator));
+% Queda de dimension 1 pq es un solo polo
 aux2 = ss(Ac2,Bc2,Cc2,Dc2);
 aux2d = c2d(aux2,Ts2,'zoh');
 uC2a = aux2d.a;
@@ -214,7 +215,7 @@ Obs_TF = minreal(Obs_TF,0.01);
 aOBS = cell2mat(Obs_TF.Numerator);
 aOBS = [aOBS(1:2); aOBS(3:4)];
 bOBS = cell2mat(Obs_TF.Denominator);
-bOBS = bOBS(1:2);
+bOBS = bOBS(1:2); % El denominador va una sola vez
 [Aobs2, Bobs2, Cobs2, Dobs2] = tf2ss(aOBS,bOBS);
 aux_obs = ss(Aobs2, Bobs2, Cobs2, Dobs2);
 aux_obsD = c2d(aux_obs,Ts2,'zoh');
